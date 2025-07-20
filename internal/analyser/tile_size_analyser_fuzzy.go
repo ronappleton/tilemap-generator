@@ -27,20 +27,13 @@ func AnalyseTileSizesFuzzy(imgPath string, sizes []int) ([]TileSizeResult, error
 	var results []TileSizeResult
 	for _, size := range sizes {
 		tiles := maputils.SliceImageIntoTiles(srcImg, size)
-		hashMap := make(map[string]bool)
-		for _, tile := range tiles {
-			hash, err := maputils.PerceptualHash(tile)
-			if err != nil {
-				continue // or log
-			}
-			hashMap[hash] = true
-		}
+		_, unique := FuzzyMatchTiles(tiles, 5)
 
-		reuseRatio := 1.0 - float64(len(hashMap))/float64(len(tiles))
+		reuseRatio := 1.0 - float64(unique)/float64(len(tiles))
 		results = append(results, TileSizeResult{
 			TileSize:    size,
 			TotalTiles:  len(tiles),
-			UniqueTiles: len(hashMap),
+			UniqueTiles: unique,
 			ReuseRatio:  reuseRatio,
 		})
 	}
