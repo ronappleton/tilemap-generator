@@ -30,6 +30,9 @@ func InspectMap(imgPath string) (*MapAnalysisResult, error) {
 		return nil, fmt.Errorf("failed to decode image: %w", err)
 	}
 
+	// Clean the image before collecting statistics
+	decoded = PreprocessForTraining(decoded)
+
 	bounds := decoded.Bounds()
 	uniqueColors := make(map[color.Color]struct{})
 	brightnessValues := []float64{}

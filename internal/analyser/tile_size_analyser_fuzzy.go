@@ -21,6 +21,9 @@ func AnalyseTileSizesFuzzy(imgPath string, sizes []int) ([]TileSizeResult, error
 		return nil, fmt.Errorf("failed to decode image: %w", err)
 	}
 
+	// Clean the image before analysis
+	srcImg = PreprocessForTraining(srcImg)
+
 	var results []TileSizeResult
 	for _, size := range sizes {
 		tiles := maputils.SliceImageIntoTiles(srcImg, size)
