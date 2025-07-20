@@ -5,18 +5,23 @@ import (
 	"tilemap-generator/internal/maputils"
 )
 
-func TrainFromImage(img image.Image, tileSize int, outputDir string) {
+func TrainFromImage(img image.Image, tileSize int, outputDir string) error {
 	rawTiles := maputils.SliceImageIntoTiles(img, tileSize)
 
 	// Wrap into []Tile
 	var tiles []maputils.Tile
 	for i, tileImg := range rawTiles {
+		hash, err := maputils.HashTile(tileImg)
+		if err != nil {
+			// skip tiles that fail to hash
+			continue
+		}
 		tiles = append(tiles, maputils.Tile{
-			ID:   i,
-			Img:  tileImg,
-			Hash: maputils.HashImage(tileImg),
+			ID:    i,
+			Image: tileImg,
+			Hash:  hash,
 		})
 	}
 
-	maputils.SaveTileset(tiles, outputDir, tileSize)
+	return maputils.SaveTileset(tiles, outputDir, tileSize)
 }
