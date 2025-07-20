@@ -2,7 +2,6 @@ package analyser
 
 import (
 	"image"
-	_ "image/color"
 	"math"
 
 	"github.com/disintegration/gift"
@@ -11,19 +10,26 @@ import (
 // PreprocessForTraining takes an image and returns a cleaned version suitable for tile analysis.
 // It removes anti-aliasing, reduces colours, and enforces hard edges.
 func PreprocessForTraining(img image.Image) image.Image {
+	// Grayscale conversion ensures consistent processing and reduces colour noise
 	g := gift.New(
-		// Step 1: Slight blur to smooth noise (anti-aliasing removal)
+		gift.Grayscale(),
+		// Slight blur to smooth noise (anti-aliasing removal)
 		gift.GaussianBlur(0.4),
+		// Sharpen edges after blur to enhance boundaries
+		gift.UnsharpMask(1, 1, 0),
 	)
 
-	// Create a destination image and apply the filter pipeline
 	dst := image.NewRGBA(g.Bounds(img.Bounds()))
 	g.Draw(dst, img)
 
-	// Step 2: Manual posterize
-	posterizeImage(dst, 4) // 4 levels per channel
+	// First posterisation to flatten colours
+	posterizeImage(dst, 4)
+	// Morphological opening to remove isolated noise pixels
+	morphologicalOpen(dst)
+	// Reapply posterisation in case sharpening introduced small variations
+	posterizeImage(dst, 4)
 
-	// Step 3: Enforce hard edges via per-pixel thresholding
+	// Enforce hard edges via per-pixel thresholding
 	applyThreshold(dst, 15)
 
 	return dst
@@ -58,4 +64,69 @@ func posterizeImage(img *image.RGBA, levels int) {
 			img.Pix[o+2] = uint8((int(img.Pix[o+2]) / step) * step)
 		}
 	}
+}
+
+// morphologicalOpen performs an erosion followed by dilation using a 3x3 kernel.
+func morphologicalOpen(img *image.RGBA) {
+	eroded := erode(img)
+	dilated := dilate(eroded)
+	copy(img.Pix, dilated.Pix)
+}
+
+func erode(src *image.RGBA) *image.RGBA {
+	b := src.Bounds()
+	dst := image.NewRGBA(b)
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			min := uint8(255)
+			for ky := -1; ky <= 1; ky++ {
+				for kx := -1; kx <= 1; kx++ {
+					px := x + kx
+					py := y + ky
+					if px < b.Min.X || py < b.Min.Y || px >= b.Max.X || py >= b.Max.Y {
+						continue
+					}
+					o := src.PixOffset(px, py)
+					if src.Pix[o] < min {
+						min = src.Pix[o]
+					}
+				}
+			}
+			o := dst.PixOffset(x, y)
+			dst.Pix[o] = min
+			dst.Pix[o+1] = min
+			dst.Pix[o+2] = min
+			dst.Pix[o+3] = src.Pix[o+3]
+		}
+	}
+	return dst
+}
+
+func dilate(src *image.RGBA) *image.RGBA {
+	b := src.Bounds()
+	dst := image.NewRGBA(b)
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			max := uint8(0)
+			for ky := -1; ky <= 1; ky++ {
+				for kx := -1; kx <= 1; kx++ {
+					px := x + kx
+					py := y + ky
+					if px < b.Min.X || py < b.Min.Y || px >= b.Max.X || py >= b.Max.Y {
+						continue
+					}
+					o := src.PixOffset(px, py)
+					if src.Pix[o] > max {
+						max = src.Pix[o]
+					}
+				}
+			}
+			o := dst.PixOffset(x, y)
+			dst.Pix[o] = max
+			dst.Pix[o+1] = max
+			dst.Pix[o+2] = max
+			dst.Pix[o+3] = src.Pix[o+3]
+		}
+	}
+	return dst
 }

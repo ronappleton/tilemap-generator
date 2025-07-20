@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	inputName string
-	tileSize  int
+	inputName  string
+	tileSize   int
+	diagnostic bool
 )
 
 var trainTilesCmd = &cobra.Command{
@@ -97,7 +98,7 @@ var trainTilesCmd = &cobra.Command{
 			return
 		}
 		cleaned := analyser.PreprocessForTraining(img)
-		if err := tiletrainer.TrainFromImage(cleaned, tileSize, outputDir); err != nil {
+		if err := tiletrainer.TrainFromImage(cleaned, tileSize, outputDir, diagnostic); err != nil {
 			fmt.Println("❌ Failed to train tiles:", err)
 			return
 		}
@@ -107,5 +108,6 @@ var trainTilesCmd = &cobra.Command{
 func init() {
 	trainTilesCmd.Flags().StringVarP(&inputName, "input", "i", "", "Name of map to train on (without extension)")
 	trainTilesCmd.MarkFlagRequired("input")
+	trainTilesCmd.Flags().BoolVarP(&diagnostic, "diagnostic", "d", false, "Save diagnostic grid of detected tiles")
 	rootCmd.AddCommand(trainTilesCmd)
 }
