@@ -9,11 +9,12 @@ import (
 )
 
 type TilesetEntry struct {
-	ID   int    `json:"id"`
-	File string `json:"file"`
-	Hash string `json:"hash"`
-	X    int    `json:"x"`
-	Y    int    `json:"y"`
+	ID        int       `json:"id"`
+	File      string    `json:"file"`
+	Hash      string    `json:"hash"`
+	X         int       `json:"x"`
+	Y         int       `json:"y"`
+	Adjacency Adjacency `json:"adjacency"`
 }
 
 type TilesetMetadata struct {
