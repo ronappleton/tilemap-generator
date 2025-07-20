@@ -26,6 +26,8 @@ func PreprocessForTraining(img image.Image) image.Image {
 	posterizeImage(dst, 4)
 	// Morphological opening to remove isolated noise pixels
 	morphologicalOpen(dst)
+	// Morphological closing to fill tiny gaps after opening
+	morphologicalClose(dst)
 	// Reapply posterisation in case sharpening introduced small variations
 	posterizeImage(dst, 4)
 
@@ -71,6 +73,13 @@ func morphologicalOpen(img *image.RGBA) {
 	eroded := erode(img)
 	dilated := dilate(eroded)
 	copy(img.Pix, dilated.Pix)
+}
+
+// morphologicalClose performs a dilation followed by erosion using a 3x3 kernel.
+func morphologicalClose(img *image.RGBA) {
+	dilated := dilate(img)
+	eroded := erode(dilated)
+	copy(img.Pix, eroded.Pix)
 }
 
 func erode(src *image.RGBA) *image.RGBA {
