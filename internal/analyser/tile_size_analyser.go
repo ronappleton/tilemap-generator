@@ -5,6 +5,7 @@ import (
 	"image"
 	"os"
 	"sort"
+
 	"tilemap-generator/internal/maputils"
 )
 
@@ -26,6 +27,9 @@ func AnalyseTileSizes(imagePath string, candidateSizes []int) ([]TileSizeResult,
 	if err != nil {
 		return nil, fmt.Errorf("cannot decode image: %v", err)
 	}
+
+	// Clean the image before analysis
+	img = PreprocessForTraining(img)
 
 	var results []TileSizeResult
 	for _, size := range candidateSizes {
