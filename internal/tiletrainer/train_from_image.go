@@ -5,11 +5,14 @@ import (
 	"image"
 
 	"tilemap-generator/internal/analyser"
-	"tilemap-generator/internal/maputils"
+	"tilemap-generator/internal/tileutils"
 )
 
-func TrainFromImage(img image.Image, tileSize int, outputDir string, diagnostic bool) error {
-	rawTiles := maputils.SliceImageIntoTiles(img, tileSize)
+// TrainFromImages deduplicates tiles using the cleaned image but saves tiles
+// cut from the original image into outputDir. A mapping of tile positions to
+// tile IDs is written to tileset.json.
+func TrainFromImages(original, cleaned image.Image, tileSize int, outputDir string, diagnostic bool) error {
+	rawTiles := tileutils.ExtractTiles(cleaned, tileSize)
 	groups, unique := analyser.FuzzyMatchTiles(rawTiles, 5)
 
 	fmt.Printf("Deduplicated tiles: %d unique of %d total\n", unique, len(rawTiles))
@@ -19,20 +22,10 @@ func TrainFromImage(img image.Image, tileSize int, outputDir string, diagnostic 
 		_ = analyser.SaveDiagnosticGrid(rawTiles, groups, tileSize, diagPath)
 	}
 
-	// Wrap into []Tile
-	var tiles []maputils.Tile
-	for i, tileImg := range rawTiles {
-		hash, err := maputils.HashTile(tileImg)
-		if err != nil {
-			// skip tiles that fail to hash
-			continue
-		}
-		tiles = append(tiles, maputils.Tile{
-			ID:    i,
-			Image: tileImg,
-			Hash:  hash,
-		})
+	tiles, mapping, err := tileutils.ExtractUniqueTilesWithIndex(original, cleaned, tileSize)
+	if err != nil {
+		return err
 	}
 
-	return maputils.SaveTileset(tiles, outputDir, tileSize)
+	return tileutils.SaveTilesetWithIndex(tiles, mapping, outputDir, tileSize)
 }

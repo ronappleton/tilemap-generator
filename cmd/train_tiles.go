@@ -98,7 +98,7 @@ var trainTilesCmd = &cobra.Command{
 			return
 		}
 		cleaned := analyser.PreprocessForTraining(img)
-		if err := tiletrainer.TrainFromImage(cleaned, tileSize, outputDir, diagnostic); err != nil {
+		if err := tiletrainer.TrainFromImages(img, cleaned, tileSize, outputDir, diagnostic); err != nil {
 			fmt.Println("❌ Failed to train tiles:", err)
 			return
 		}
