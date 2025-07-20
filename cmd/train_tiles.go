@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/disintegration/imaging"
 	"github.com/spf13/cobra"
 	"tilemap-generator/internal/analyser"
 	"tilemap-generator/internal/iohelpers"
@@ -90,13 +91,16 @@ var trainTilesCmd = &cobra.Command{
 
 		fmt.Printf("\n🧠 Training tileset with %dpx tiles into '%s'...\n", tileSize, outputDir)
 		// Load and clean the image
-		img, err := imaging.Load(resolvedPath)
+		img, err := imaging.Open(resolvedPath)
 		if err != nil {
 			fmt.Println("❌ Failed to load image:", err)
 			return
 		}
 		cleaned := analyser.PreprocessForTraining(img)
-		tiletrainer.Train(resolvedPath, tileSize, outputDir)
+		if err := tiletrainer.TrainFromImage(cleaned, tileSize, outputDir); err != nil {
+			fmt.Println("❌ Failed to train tiles:", err)
+			return
+		}
 	},
 }
 
