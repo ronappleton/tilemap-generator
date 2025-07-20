@@ -17,6 +17,8 @@ func SaveTilesetWithIndex(tiles []maputils.Tile, mapping [][]int, outputDir stri
 		return err
 	}
 
+	adj := maputils.BuildAdjacency(tiles, mapping)
+
 	var entries []maputils.TilesetEntry
 	for _, tile := range tiles {
 		filename := fmt.Sprintf("tiles/tile_%03d.png", tile.ID)
@@ -33,11 +35,12 @@ func SaveTilesetWithIndex(tiles []maputils.Tile, mapping [][]int, outputDir stri
 		outFile.Close()
 
 		entries = append(entries, maputils.TilesetEntry{
-			ID:   tile.ID,
-			File: filename,
-			Hash: tile.Hash,
-			X:    tile.X,
-			Y:    tile.Y,
+			ID:        tile.ID,
+			File:      filename,
+			Hash:      tile.Hash,
+			X:         tile.X,
+			Y:         tile.Y,
+			Adjacency: adj[tile.ID],
 		})
 	}
 
